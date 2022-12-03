@@ -5,13 +5,16 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./BancorFormula.sol";
 
-contract BondingCurve is ERC20, BancorFormula, Ownable {
+abstract contract BondingCurve is ERC20, BancorFormula, Ownable {
     uint32 reserveRatio;
     uint256 gasPrice = 0 wei;
 
-    modifier validGasPrice() {}
+    modifier validGasPrice() {
+        assert(tx.gasprice <= gasPrice);
+        _;
+    }
 
-    function buy() public payable returns (bool) {
+    function buy() public payable validGasPrice returns (bool) {
         require(msg.value > 0, "BondingCurve: Can not buy for 0");
         uint256 reserveCurrency = address(this).balance;
         uint256 tokenSupply = totalSupply();
@@ -20,7 +23,7 @@ contract BondingCurve is ERC20, BancorFormula, Ownable {
         return true;
     }
 
-    function sell(uint256 sellAmount) public returns (bool) {
+    function sell(uint256 sellAmount) public validGasPrice returns (bool) {
         require(sellAmount > 0 && balanceOf(msg.sender) >= sellAmount, "BondingCurve: Selling conditions not met");
         uint256 tokenSupply = totalSupply();
         uint256 reserveCurrency = address(this).balance;
