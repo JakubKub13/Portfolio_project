@@ -9,12 +9,26 @@ contract BondingCurve is ERC20, BancorFormula, Ownable {
     uint32 reserveRatio;
     uint256 gasPrice = 0 wei;
 
+    modifier validGasPrice() {}
+
     function buy() public payable returns (bool) {
         require(msg.value > 0, "BondingCurve: Can not buy for 0");
         uint256 reserveCurrency = address(this).balance;
         uint256 tokenSupply = totalSupply();
         uint256 tokensToMint = purchaseCalculation(tokenSupply, reserveCurrency, reserveRatio, msg.value);
         _mint(msg.sender, tokensToMint);
+        return true;
+    }
+
+    function sell(uint256 sellAmount) public returns (bool) {
+        require(sellAmount > 0 && balanceOf(msg.sender) >= sellAmount, "BondingCurve: Selling conditions not met");
+        uint256 tokenSupply = totalSupply();
+        uint256 reserveCurrency = address(this).balance;
+        uint256 ethAmount = sellCalculation(tokenSupply, reserveCurrency, reserveRatio, sellAmount);
+        //(bool success, ) = payable(msg.sender).call{value: ethAmount}("");
+        //require(success, "BondingCurve: Sending eth transaction has failed");
+        payable(msg.sender).transfer(ethAmount);
+        _burn(msg.sender, sellAmount);
         return true;
     }
 }
