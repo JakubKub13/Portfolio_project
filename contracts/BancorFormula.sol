@@ -2,8 +2,9 @@
 pragma solidity 0.8.10;
 
 import "openzeppelin/contracts/utils/math/SafeMath.sol";
+import "./SafePower.sol";
 
-contract BancorFormula {
+contract BancorFormula is SafePower {
     using SafeMath for uint256;
 
     uint32 private constant MAX_RATIO = 100000; // The hardcap of reserve ratio
@@ -26,6 +27,11 @@ contract BancorFormula {
         if (reserveRatio == MAX_RATIO) {
             return tokenSupply.mul(depositAmount).div(reserveCurrency);
         }
+
+        uint256 baseN = depositAmount.add(reserveCurrency);
+        (uint256 result, uint8 precision) = power(baseN, reserveCurrency, reserveRatio, MAX_RATIO);
+        uint256 tempVar = tokenSupply.mul(result) >> precision;
+        return tempVar - tokenSupply;
     }
 
 }
